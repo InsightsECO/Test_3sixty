@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <head>
+        <title>Resource Allocation</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+      
+        <style>
+          body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f7f9fc;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background: white;
+    margin: 75px auto;
+    padding: 30px;
+    width: 95%;
+    max-width: 1500px;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    animation: slideUp 0.4s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 14px;
+}
+
+.modal-content th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background-color: #1b99af;
+  color: #ffffff;
+  border-radius: 8px;
+}
+
+/* Apply to td for "shadow row" effect */
+.modal-content td {
+  background: #fff;
+  padding: 12px 16px;
+  font-size: 13px;
+  border: none;
+  white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+  /* Row hover effect */
+.modal-content tr:hover td {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+/* Target first column cells specifically */
+.modal-content td:first-child {
+  font-weight: 600;
+  font-size: 12px;
+  color: #fff;
+  text-align: center;
+  border-radius: 20px;
+  padding: 8px 14px;
+  width: 120px;
+  text-transform: capitalize;
+  white-space: nowrap;
+  background-color: var(--resource-color, #a7acff); /* fallback */
+}
+
+/* Optional hover effect for extra polish */
+.modal-content td:first-child:hover {
+  opacity: 0.95;
+  cursor: default;
+}
+
+
+      
+          .close {
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #555;
+          }
+      
+          .close:hover {
+            color: crimson;
+          }
+      
+          .form-group {
+            margin-bottom: 16px;
+          }
+      
+          label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 14px;
+          }
+      
+          input[type="text"],
+          input[type="number"],
+          select {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+            transition: 0.3s;
+          }
+      
+          input:focus,
+          select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+          }
+      
+          .btn {
+            padding: 10px 20px;
+            background: #07182b;
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+          }
+      
+          .btn:hover {
+            background-color: #89c2ff;
+          }
+      
+          .table-scroll {
+            overflow-x: auto;
+            margin-top: 20px;
+            max-height: 400px;
+          }
+      
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 700px;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+          }
+      
+          th {
+            background: #f1f3f7;
+            font-weight: 600;
+            font-size: 14px;
+            color: #444;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+          }
+      
+          td, th {
+            padding: 12px 10px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 13px;
+          }
+      
+          input[type="number"] {
+            width: 70px;
+            padding: 6px;
+            font-size: 13px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+          }
+      
+          .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+            display: inline-block;
+          }
+      
+          /* Scrollbar styling for table */
+          .table-scroll::-webkit-scrollbar {
+            height: 8px;
+          }
+      
+          .table-scroll::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 4px;
+          }
+      
+          .table-scroll::-webkit-scrollbar-track {
+            background-color: #f0f0f0;
+          }
+
+          .modal-body {
+  flex: 1;
+  padding: 24px 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* <- smooth spacing between children */
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+#projectDropdown {
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+#allocationDataTableContainer {
+  margin-top: 40px;
+  background: #fff;
+  padding: 20px;
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease-in-out;
+  overflow: hidden;
+}
+
+.table-scroll-fixed {
+  max-height: 480px;
+  overflow-x: auto;
+  overflow-y: auto;
+  border-radius: 12px;
+  scroll-behavior: smooth;
+  padding: 10px;
+  background-color: #fafafa;
+}
+
+.table-scroll-fixed::-webkit-scrollbar {
+  height: 8px;
+  width: 6px;
+}
+
+.table-scroll-fixed::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.table-scroll-fixed::-webkit-scrollbar-thumb {
+  background-color: #bbb;
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+}
+
+.table-scroll-fixed table {
+  border-collapse: separate;
+  border-spacing: 0 12px; /* spacing between rows */
+  width: max-content;
+  min-width: 100%;
+}
+
+.table-scroll-fixed thead th {
+  position: sticky;
+  top: 0;
+  background: #f4f4f4;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+.table-scroll-fixed tbody tr {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.table-scroll-fixed tbody tr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.table-scroll-fixed th,
+.table-scroll-fixed td {
+  padding: 12px 20px;
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+  background: transparent;
+  border: none; /* remove Excel-style grid lines */
+}
+.table-scroll-fixed tbody tr {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+    
+
+.popup-success {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  background-color: #4BB543;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.popup-icon {
+  font-size: 20px;
+}
+
+.popup-success.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+table button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+table button:hover {
+  transform: scale(1.2);
+  color: rgb(187, 0, 0);
+}
+
+table th:first-child,
+table td:first-child {
+  text-align: center;
+  width: 40px;
+}
+button {
+  transition: background 0.3s ease;
+}
+button:hover {
+  background: #b30000;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: rgb(255, 255, 255);
+  font-size: 0.85em;
+  font-weight: 500;
+  white-space: nowrap;
+  text-transform: capitalize;
+  transition: all 0.3s ease-in-out;
+  animation: fadeInSlide 0.2s ease;
+}
+
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.edit-input:focus {
+    outline: 2px solid #3b82f6;
+    background: #f0f9ff;
+  }
+
+  .cool-delete-btn {
+    background: linear-gradient(to right, #ff4d4f, #d9363e);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(255, 59, 68, 0.733);
+    transition: all 0.25s ease-in-out;
+    transform-origin: center;
+  }
+
+  .cool-delete-btn:hover {
+    background: linear-gradient(to right, #e63946, #b02a37);
+    transform: scale(1.05);
+    box-shadow: 0 6px 14px rgba(207, 40, 48, 0.726);
+  }
+
+  .cool-delete-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 6px rgba(255, 208, 253, 0.863);
+  }
+
+  </style>
+</head>
+<body>
+
+<!-- Put this OUTSIDE the modal, with better spacing -->
+<div style="text-align: left ; padding: 30px 40px 10px 10px;">
+    <button id="openFormBtn" class="btn">Allocate Resources</button>
+  </div>
+  
+
+  <div id="allocationFormModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+  
+      <div class="modal-header">
+        <h3 style="margin: 0;">Resource Allocation</h3>
+      </div>
+  
+      <div class="modal-body">
+  
+        <!-- Project Dropdown -->
+        <div class="form-group">
+          <label for="projectDropdown"><strong>Select Project:</strong></label>
+          <select id="projectDropdown" style="width: 100%; max-width: 300px; padding: 10px;"></select>
+        </div>
+  
+        <!-- Table Container -->
+        <div class="table-scroll" id="resourceTableContainer">
+          <!-- Table will be injected here -->
+        </div>
+  
+        <!-- Submit Button -->
+        <div style="margin-top: 24px; text-align: right;">
+          <button id="submitAllocation" class="btn">Submit Allocation</button>
+        </div>
+  
+      </div>
+    </div>
+  </div>
+  
+
+<div id="allocationDataTableContainer">
+  <h3>Saved Resource Allocations</h3>
+  <div id="allocationTableWrapper" class="table-scroll-fixed"></div>
+</div>
+
+<script>
+    const sampleManageProject = {
+      headers: ["Project Name", "Customer Name", "Jan 2024", "Feb 2024", "Mar 2024"],
+      rows: [
+        ["Project X", "Client A", 1000, 2000, 3000],
+        ["Project Y", "Client B", 1500, 2500, 3500]
+      ]
+    };
+    if (!localStorage.getItem("revenueTableData")) {
+      localStorage.setItem("revenueTableData", JSON.stringify(sampleManageProject));
+    }
+  
+    const resources = [
+      "LDP Delivery", "LDP Mentoring", "Sales Optimisation", "Exec Mentoring", "Lean",
+      "Digitalisation", "ESG", "Finance Optimisation", "PMO Governance",
+      "Strategy Development", "Supply Chain", "Other"
+    ];
+  
+    const modal = document.getElementById("allocationFormModal");
+    const openBtn = document.getElementById("openFormBtn");
+    const closeBtn = document.getElementById("closeModal");
+    const projectDropdown = document.getElementById("projectDropdown");
+    const tableContainer = document.getElementById("resourceTableContainer");
+  
+    openBtn.onclick = () => {
+      modal.style.display = "block";
+      loadDropdown();
+    };
+  
+    closeBtn.onclick = () => {
+      modal.style.display = "none";
+      tableContainer.innerHTML = "";
+    };
+  
+    function loadDropdown() {
+      const data = JSON.parse(localStorage.getItem("revenueTableData") || "{}");
+      const rows = data.rows || [];
+      projectDropdown.innerHTML = `<option value="">-- Select --</option>`;
+      rows.forEach((row, i) => {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = `${row[0]} | ${row[1]}`;
+        projectDropdown.appendChild(opt);
+      });
+    }
+  
+    projectDropdown.onchange = function () {
+      const selectedIndex = this.value;
+      if (selectedIndex === "") return;
+  
+      const data = JSON.parse(localStorage.getItem("revenueTableData") || "{}");
+      const headers = data.headers || [];
+      const row = data.rows[selectedIndex];
+  
+      const months = headers.slice(2);
+      const totalPerMonth = row.slice(2);
+      const resourceShare = totalPerMonth.map(val => val / resources.length);
+  
+      let html = `<div class="table-scroll"><table><thead><tr><th>Resource</th>`;
+      months.forEach(m => html += `<th>${m}</th>`);
+      html += `</tr></thead><tbody>`;
+  
+      resources.forEach((res, rIndex) => {
+        html += `<tr><td>${res}</td>`;
+        totalPerMonth.forEach((val, mIndex) => {
+          const defaultVal = Math.round(resourceShare[mIndex]);
+          html += `<td><input type="number" min="0" value="${defaultVal}" data-resource="${res}" data-month="${months[mIndex]}" /></td>`;
+        });
+        html += `</tr>`;
+      });
+  
+      html += `</tbody></table></div>`;
+      tableContainer.innerHTML = `
+        <p><strong>Project:</strong> ${row[0]}<br/><strong>Customer:</strong> ${row[1]}</p>
+        ${html}
+      `;
+    };
+
+    function showSavePopup() {
+  const popup = document.getElementById("savePopup");
+  popup.classList.add("show");
+  
+  setTimeout(() => {
+    popup.classList.remove("show");
+  }, 2500); // hides after 2.5 seconds
+}
+
+  
+    document.getElementById("submitAllocation").onclick = () => {
+      const selectedIndex = projectDropdown.value;
+      if (!selectedIndex) {
+        alert("Please select a project.");
+        return;
+      }
+  
+      const data = JSON.parse(localStorage.getItem("revenueTableData") || "{}");
+      const row = data.rows[selectedIndex];
+      const projectKey = `${row[0]} | ${row[1]}`;
+  
+      const inputs = document.querySelectorAll("#resourceTableContainer input");
+      const allocation = {
+        project: projectKey,
+        allocations: []
+      };
+  
+      inputs.forEach(input => {
+        allocation.allocations.push({
+          resource: input.dataset.resource,
+          month: input.dataset.month,
+          value: parseFloat(input.value) || 0
+        });
+      });
+  
+      let all = JSON.parse(localStorage.getItem("resourceAllocations") || "[]");
+      all.push(allocation);
+      localStorage.setItem("resourceAllocations", JSON.stringify(all));
+  
+      modal.style.display = "none";
+      tableContainer.innerHTML = "";
+      
+      showSavePopup()
+  
+      renderSavedAllocations(); // Reloads and shows updated table
+      console.log("Saving allocation...", allocation);
+
+    };
+    const resourceColors = {
+  "LDP Delivery": "#1E40AF",          // Deep Blue
+  "LDP Mentoring": "#0EA5E9",         // Sky Blue
+  "Sales Optimisation": "#10B981",    // Emerald Green
+  "Exec Mentoring": "#EAB308",        // Gold Yellow
+  "Lean": "#F97316",                  // Vibrant Orange
+  "Digitalisation": "#8B5CF6",        // Violet
+  "ESG": "#EF4444",                   // Red
+  "Finance Optimisation": "#059669",  // Teal Green
+  "PMO Governance": "#64748B",        // Cool Gray
+  "Strategy Development": "#BE185D",  // Dark Pink
+  "Supply Chain": "#06B6D4",          // Cyan Blue
+  "Other": "#9CA3AF"                  // Neutral Gray
+};
+
+
+    function renderSavedAllocations() {
+  const all = JSON.parse(localStorage.getItem("resourceAllocations") || "[]");
+  const wrapper = document.getElementById("allocationTableWrapper");
+
+  if (!all.length) {
+    wrapper.innerHTML = `<p style="color: gray; padding: 10px;">No allocations saved yet.</p>`;
+    return;
+  }
+
+  
+
+  // Step 1: Extract unique months
+  const uniqueMonths = new Set();
+  all.forEach(entry => {
+    if (!entry.allocations || !Array.isArray(entry.allocations)) return;
+    entry.allocations.forEach(alloc => {
+      uniqueMonths.add(alloc.month);
+    });
+  });
+
+  // Step 2: Sort months
+  const monthDateMap = {};
+  Array.from(uniqueMonths).forEach(monthStr => {
+    monthDateMap[monthStr] = new Date(Date.parse("01-" + monthStr));
+  });
+
+  const sortedMonths = Array.from(uniqueMonths).sort((a, b) => {
+    return monthDateMap[a] - monthDateMap[b];
+  });
+
+  // Step 3: Start building HTML
+  let html = `
+   <div style="text-align: right; margin-bottom: 10px;">
+  <button onclick="bulkDeleteSelectedAllocations()" class="cool-delete-btn">
+     Delete Selected
+  </button>
+</div>
+</div>
+    <div class="table-scroll-fixed">
+      <table>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" onclick="toggleAllCheckboxes(this)"/></th>
+            <th>Project</th>
+            <th>Resource</th>
+  `;
+
+  sortedMonths.forEach(month => {
+    html += `<th>${month}</th>`;
+  });
+
+  html += `<th>Action</th></tr></thead><tbody>`;
+
+  // Step 4: Render each allocation group
+  all.forEach((entry, entryIndex) => {
+    if (!entry.allocations || !Array.isArray(entry.allocations)) return;
+
+    const resourceMap = new Map();
+
+    entry.allocations.forEach(alloc => {
+      const key = alloc.resource;
+      if (!resourceMap.has(key)) {
+        resourceMap.set(key, {});
+      }
+      resourceMap.get(key)[alloc.month] = alloc.value;
+    });
+
+    resourceMap.forEach((monthMap, resourceName) => {
+      html += `<tr data-entry-index="${entryIndex}" data-resource="${resourceName}">`;
+      html += `<td><input type="checkbox" class="row-check" data-entry-index="${entryIndex}" data-resource="${resourceName}"></td>`;
+      const color = resourceColors[resourceName] || "#888";
+html += `<td>${entry.project}</td><td><span class="badge" style="background-color: ${color};">${resourceName}</span></td>`;
+
+
+      
+      sortedMonths.forEach(month => {
+        html += `<td>${monthMap[month] || ""}</td>`;
+      });
+      html += `
+  <td>
+    <button onclick="enableEditMode(this)" title="Edit" style="background: none; border: none; color: seagreen; cursor: pointer; margin-right: 5px;">
+      <i class="fas fa-pen-to-square"></i>
+    </button>
+    <button onclick="deleteResourceAllocations(${entryIndex}, '${resourceName}')" title="Delete" style="background: none; border: none; color: crimson; cursor: pointer;">
+      <i class="fas fa-trash"></i>
+    </button>
+  </td>
+`;
+
+
+      html += `</tr>`;
+    });
+  });
+
+  html += `</tbody></table></div>`;
+  wrapper.innerHTML = html;
+
+  
+}
+
+function enableEditMode(editBtn) {
+  const row = editBtn.closest('tr');
+  const entryIndex = row.getAttribute('data-entry-index');
+  const resource = row.getAttribute('data-resource');
+
+  const cells = row.querySelectorAll('td');
+  
+  // Skip first 3 columns: checkbox, project name, resource badge
+  for (let i = 3; i < cells.length - 1; i++) {
+    const cell = cells[i];
+    const currentVal = cell.textContent.trim();
+    cell.innerHTML = `<input type="number" value="${currentVal}" class="edit-input" style="width: 60px; padding: 2px 4px;" />`;
+  }
+
+  // Replace action buttons with Save / Cancel
+  const actionCell = row.lastElementChild;
+  actionCell.innerHTML = `
+    <button onclick="saveEditedRow(this)" style="color: blue; margin-right: 5px;">💾</button>
+    <button onclick="cancelEditMode(this)" style="color: gray;">❌</button>
+  `;
+}
+function saveEditedRow(saveBtn) {
+  const row = saveBtn.closest('tr');
+  const entryIndex = parseInt(row.getAttribute('data-entry-index'));
+  const resource = row.getAttribute('data-resource');
+  const inputs = row.querySelectorAll('input.edit-input');
+
+  const all = JSON.parse(localStorage.getItem("resourceAllocations") || "[]");
+  const allocationGroup = all[entryIndex];
+
+  // Flatten all months
+  const updatedValues = {};
+  inputs.forEach((input, idx) => {
+    const month = document.querySelectorAll("thead th")[idx + 3].textContent; // match index
+    updatedValues[month] = input.value;
+  });
+
+  // Update the entry in localStorage
+  if (allocationGroup && Array.isArray(allocationGroup.allocations)) {
+    allocationGroup.allocations = allocationGroup.allocations.filter(a => a.resource !== resource);
+    Object.entries(updatedValues).forEach(([month, value]) => {
+      if (value && !isNaN(value)) {
+        allocationGroup.allocations.push({
+          resource,
+          month,
+          value: parseFloat(value)
+        });
+      }
+    });
+
+    localStorage.setItem("resourceAllocations", JSON.stringify(all));
+    renderSavedAllocations(); // Re-render the table
+  }
+}
+function cancelEditMode(cancelBtn) {
+  renderSavedAllocations(); // Just re-render to reset
+}
+
+
+function bulkDeleteSelectedAllocations() {
+  const selected = document.querySelectorAll('.row-check:checked');
+  if (selected.length === 0) {
+    alert("⚠️ Please select at least one row to delete.");
+    return;
+  }
+
+  if (!confirm("❗ Are you sure you want to delete the selected allocations?")) return;
+
+  let all = JSON.parse(localStorage.getItem("resourceAllocations") || "[]");
+
+  // Step 1: Create a map to track which resources to delete per entry index
+  const deleteMap = new Map();
+
+  selected.forEach(input => {
+    const entryIndex = parseInt(input.getAttribute("data-entry-index"));
+    const resource = input.getAttribute("data-resource");
+
+    if (!deleteMap.has(entryIndex)) {
+      deleteMap.set(entryIndex, new Set());
+    }
+    deleteMap.get(entryIndex).add(resource);
+  });
+
+  // Step 2: Delete matching allocations
+  deleteMap.forEach((resourcesSet, entryIndex) => {
+    if (!all[entryIndex] || !Array.isArray(all[entryIndex].allocations)) return;
+
+    all[entryIndex].allocations = all[entryIndex].allocations.filter(alloc => 
+      !resourcesSet.has(alloc.resource)
+    );
+  });
+
+  // Step 3: Remove any entries that have no allocations left
+  all = all.filter(entry => entry && Array.isArray(entry.allocations) && entry.allocations.length > 0);
+
+
+  localStorage.setItem("resourceAllocations", JSON.stringify(all));
+  renderSavedAllocations();
+  showPopup("✅ Selected allocations deleted.");
+}
+
+
+
+
+  
+function deleteResourceAllocations(entryIndex, resourceName) {
+  const all = JSON.parse(localStorage.getItem("resourceAllocations") || "[]");
+
+  if (all[entryIndex]) {
+    const updatedAllocations = all[entryIndex].allocations.filter(
+      a => a.resource !== resourceName
+    );
+
+    if (updatedAllocations.length === 0) {
+      all.splice(entryIndex, 1); // Remove the entire entry if no more allocations
+    } else {
+      all[entryIndex].allocations = updatedAllocations;
+    }
+
+    localStorage.setItem("resourceAllocations", JSON.stringify(all));
+    renderSavedAllocations();
+  }
+}
+
+    window.onload = () => {
+      renderSavedAllocations();
+    };
+
+    function toggleAllCheckboxes(masterCheckbox) {
+  document.querySelectorAll('.row-check').forEach(cb => {
+    cb.checked = masterCheckbox.checked;
+  });
+}
+
+
+  </script>
+  
+  
+  <div id="savePopup" class="popup-success">
+    <div class="popup-icon">✅</div>
+    <div class="popup-message">Resource allocation saved!</div>
+  </div>
+  
+</body>
+</html>

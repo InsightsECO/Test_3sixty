@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  
+<body>
+  <div class="container">
+    <!-- Left Side for Charts -->
+    <div class="chart-container">
+      <!-- Chart Card -->
+      <div id="logCard" class="log-card">
+        <div class="card-header">
+          <h3>Top 5 Log Events</h3>
+        </div>
+        <div id="logList"></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart Container -->
+<div class="chart-card">
+  <div class="chart-header">
+    <h3>Monthly Weighted Revenue</h3>
+    <button id="toggleChartBtn">Switch to Bar</button>
+  </div>
+  <canvas id="monthlyRevenueChart" height="80"></canvas>
+</div>
+<!-- Include Chart.js -->
+
+<style>
+    /* Basic Reset */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Body Styling */
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f7f9fc;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Container */
+    .container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        padding: 20px;
+    }
+
+    .chart-card {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+  width: 1200px;
+  top: 20px;
+  z-index: 1000;
+  transform: scale(0);
+  animation: slideIn 0.8s ease-out forwards;
+  border: 1px solid #ddd;
+  overflow-y: auto;
+  max-height: 75vh;
+  backdrop-filter: blur(8px);
+  padding-top: 50px;
+  height: 20%;
+  
+  /* Add spacing below each card */
+  margin-bottom: 20px;
+}
+
+.chart-card:hover {
+    transform: translateY(-8px); /* Lift effect on hover */
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2); /* More prominent shadow on hover */
+}
+
+/* Header Style */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative; /* To position the button correctly */
+}
+
+/* Chart Header Text */
+.chart-header h3 {
+    margin: 0;
+    font-size: 20px; /* Slightly larger font for the header */
+    font-weight: 700;
+    color: #333; /* Darker color for contrast */
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Toggle Button */
+#toggleChartBtn {
+    padding: 8px 18px;
+    font-size: 16px;
+    border: none;
+    background: linear-gradient(135deg, #6a54e6, #7340ff); /* Gradient background */
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#toggleChartBtn:hover {
+    background: linear-gradient(135deg, #7340ff, #6a54e6); /* Reversed gradient on hover */
+    transform: scale(1.05); /* Slight scale effect for hover */
+}
+
+#toggleChartBtn:active {
+    transform: scale(0.98); /* Slightly compress the button on click for feedback */
+}
+
+/* Optional: Adding subtle animation to the chart when it loads */
+@keyframes chartLoad {
+    0% {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.chart-card canvas {
+    animation: chartLoad 1s ease-out; /* Smooth scale-in effect */
+}
+
+
+    /* Log Card Styling */
+    .log-card {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 24px;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+        width: 420px;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        transform: scale(0);
+        animation: slideIn 0.8s ease-out forwards;
+        border: 1px solid #ddd;
+        overflow-y: auto;
+        max-height: 75vh;
+        backdrop-filter: blur(8px);
+        padding-top: 20px;
+    }
+
+    /* Card Header Styling */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        background: linear-gradient(135deg, #7340ff, #ccb9ff);
+        padding: 10px 20px;
+        border-radius: 12px;
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 1px;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        color: white;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Log Item Layout */
+    .log-row {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        background-color: #f1f8e9;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 14px hsla(0, 0%, 0%, 0.12);
+    }
+
+    .log-row:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 16px;
+        font-weight: 600;
+        text-transform: capitalize;
+        margin-bottom: 12px;
+        display: inline-block;
+        color: white;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .badge.add {
+        background-color: #6a54e6;  /* Green for Add */
+    }
+
+    .badge.edit {
+        background-color: #419680;  /* Orange for Edit */
+    }
+
+    .badge.delete {
+        background-color: #F44336;  /* Red for Delete */
+    }
+
+    .timestamp {
+        font-size: 14px;
+        color: #888;
+        margin-top: 8px;
+        font-weight: 300;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .details {
+        font-size: 14px;
+        line-height: 1.6;
+        font-family: 'Poppins', sans-serif;
+        color: #333;
+    }
+
+    .details strong {
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Animation for Card */
+    @keyframes slideIn {
+        0% {
+            transform: translateX(30px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+</style>
+<div class="chart-card" id="stackedChartContainer">
+  <div class="chart-header">
+    <h3>Monthly Resource Allocation (Stacked)</h3>
+  </div>
+  <canvas id="stackedResourceChart" height="100"></canvas>
+</div>
+
+<script>
+  let chartInstance;
+  let stackedChartInstance;
+  let currentChartType = "line"; // Default chart type
+
+  function renderRevenueChart(chartType = "line") {
+    const stored = localStorage.getItem("revenueTableData");
+    if (!stored) {
+      console.warn("No revenue data found!");
+      return;
+    }
+
+    const { headers, rows } = JSON.parse(stored);
+    const months = headers.slice(2);
+    const monthlySums = new Array(months.length).fill(0);
+
+    rows.forEach(row => {
+      for (let i = 2; i < row.length; i++) {
+        monthlySums[i - 2] += parseFloat(row[i]) || 0;
+      }
+    });
+
+    const canvas = document.getElementById("monthlyRevenueChart");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels: months,
+        datasets: [{
+          label: "Weighted Revenue",
+          data: monthlySums,
+          borderColor: "#007BFF",
+          backgroundColor: chartType === "bar" ? "rgba(0,123,255,0.6)" : "rgba(0,123,255,0.1)",
+          tension: 0.3,
+          fill: chartType === "line"
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            title: { display: false },
+            grid: { display: false }
+          },
+          y: {
+            title: { display: false },
+            grid: { display: false },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  function getRandomColor(seed) {
+    const hash = seed.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hue = hash % 360;
+    return `hsl(${hue}, 70%, 70%)`;
+  }
+
+  function renderStackedResourceChart(chartType = "line") { // Modified to accept chartType
+    const stored = localStorage.getItem("resourceAllocations");
+    if (!stored) {
+      console.warn("No resource allocation data found!");
+      return;
+    }
+
+    const parsedData = JSON.parse(stored);
+    const allAllocations = parsedData.flatMap(p => p.allocations);
+
+    const monthSet = new Set(allAllocations.map(a => a.month));
+    const months = Array.from(monthSet).sort((a, b) => new Date(a) - new Date(b));
+
+    const resourceMonthMap = {};
+    allAllocations.forEach(({ resource, month, value }) => {
+      if (!resourceMonthMap[resource]) resourceMonthMap[resource] = {};
+      resourceMonthMap[resource][month] = (resourceMonthMap[resource][month] || 0) + value;
+    });
+
+    const datasets = Object.entries(resourceMonthMap).map(([resource, monthValues]) => {
+      const color = getRandomColor(resource);
+      return {
+        label: resource,
+        data: months.map(month => monthValues[month] || 0),
+        backgroundColor: chartType === "bar" ? color : undefined,
+        borderColor: chartType === "line" ? color : undefined,
+        borderWidth: chartType === "line" ? 2 : undefined,
+        tension: chartType === "line" ? 0.3 : undefined,
+        fill: false,
+        ...(chartType === "bar" && { borderRadius: 4, barThickness: 22 })
+      };
+    });
+
+    const ctx = document.getElementById("stackedResourceChart").getContext("2d");
+    if (stackedChartInstance) stackedChartInstance.destroy();
+
+    stackedChartInstance = new Chart(ctx, {
+      type: chartType, // Now dynamic
+      data: {
+        labels: months,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              font: { size: 12 },
+              boxWidth: 14
+            }
+          },
+          tooltip: {
+            mode: "index",
+            intersect: false
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { display: false }
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            grid: { color: "#eee" }
+          }
+        }
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const toggleBtn = document.getElementById("toggleChartBtn");
+    const stackedContainer = document.getElementById("stackedChartContainer");
+
+    // Initial render
+    renderRevenueChart(currentChartType);
+    renderStackedResourceChart(currentChartType);
+    stackedContainer.style.display = "block"; // Always show stacked chart
+
+    toggleBtn.addEventListener("click", () => {
+      currentChartType = currentChartType === "line" ? "bar" : "line";
+      toggleBtn.textContent = `Switch to ${currentChartType === "line" ? "Bar" : "Line"}`;
+      
+      // Re-render both charts with new type
+      renderRevenueChart(currentChartType);
+      renderStackedResourceChart(currentChartType);
+    });
+  });
+
+  // Function to get the logs from local storage and display them
+  function loadLogs() {
+    const logs = JSON.parse(localStorage.getItem("changeLogs")) || [];
+
+    // Get the top 5 latest logs
+    const latestLogs = logs.slice(0, 5);
+
+    const logList = document.getElementById("logList");
+
+    // Clear any existing logs
+    logList.innerHTML = "";
+
+    latestLogs.forEach((log) => {
+        const logRow = document.createElement("div");
+        logRow.classList.add("log-row");
+
+        const action = log.action ? log.action.toLowerCase() : "default"; // Default if Action is missing
+
+        const badge = document.createElement("span");
+        badge.classList.add("badge");
+        badge.classList.add(action);  // Adds 'add', 'edit', 'delete', or 'default' class
+        badge.textContent = log.action || "Unknown Action"; // Fallback if Action is missing
+
+        const timestamp = new Date(log.timestamp);
+        const formattedTime = timestamp.toLocaleString();
+
+        const details = document.createElement("div");
+        details.classList.add("details");
+
+        details.innerHTML = `
+            <strong>Project:</strong> ${log.project || "No Project"}<br>
+            <strong>Customer:</strong> ${log.customer || "No Customer"}<br>
+            <strong>Status:</strong> ${log.status || "No Status"}<br>
+            <strong>Probability:</strong> ${log.probability || "No Probability"}
+        `;
+
+        logRow.appendChild(badge);
+        logRow.appendChild(details);
+
+        const timestampElement = document.createElement("span");
+        timestampElement.classList.add("timestamp");
+        timestampElement.textContent = formattedTime;
+        logRow.appendChild(timestampElement);
+
+        logList.appendChild(logRow);
+    });
+}
+
+
+
+
+
+// Call loadLogs when the page loads
+window.onload = function () {
+    loadLogs();
+};
+
+
+// Example of adding logs to local storage (for testing purposes)
+function addTestLogs() {
+    const testLogs = [
+        {
+            Timestamp: "4/11/2025, 12:10:20 AM",
+            Action: "Add",
+            Project: "Lean Training Events1",
+            Customer: "Lean Training Events1",
+            Status: "Active",
+            Probability: 0.7,
+        },
+        {
+            Timestamp: "4/10/2025, 11:57:09 PM",
+            Action: "Edit",
+            Project: "Lean Training Events1",
+            Customer: "Lean Training Events1",
+            Status: "Active",
+            Probability: 0.7,
+        },
+    ];
+
+    localStorage.setItem("changeLogs", JSON.stringify(testLogs));
+}
+
+// Uncomment below to add test logs (run once in console to test)
+// addTestLogs();
+
+</script>
